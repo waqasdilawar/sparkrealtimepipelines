@@ -8,6 +8,8 @@ services:
       - "8080:8080"
       - "7077:7077"
     command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
+    networks:
+      - shared-services-network
 
   spark-worker:
     image: apache/spark:4.0.0-scala2.13-java21-python3-r-ubuntu
@@ -19,3 +21,8 @@ services:
     command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"]
     depends_on:
       - spark-master
+    networks:
+      - shared-services-network
+networks:
+  shared-services-network:
+    external: true
