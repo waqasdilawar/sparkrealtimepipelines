@@ -1,62 +1,53 @@
 package org.devgurupk.realtimepipelines;
 
-import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.streaming.Durations;
-import org.apache.spark.streaming.api.java.JavaDStream;
-import org.apache.spark.streaming.api.java.JavaPairDStream;
-import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import scala.Tuple2;
-
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.util.concurrent.TimeoutException;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.functions;
+import org.apache.spark.sql.streaming.StreamingQuery;
+import org.apache.spark.sql.streaming.StreamingQueryException;
 
 public final class QueueProcessingApp {
-  public static void main(String[] args) throws InterruptedException {
-    JavaStreamingContext ssc = null;
+  public static void main(String[] args) throws StreamingQueryException, TimeoutException {
+    SparkSession spark = SparkSession.builder()
+      .appName("StructuredQueueStream")
+      .master("spark://localhost:7077")
+      .config("spark.driver.host", "10.43.202.124")
+      // Your existing config to prevent Java 17 errors
+      .config("spark.executor.processTreeMetrics.enabled", "false")
+      .config("spark.driver.processTreeMetrics.enabled", "false")
+      .getOrCreate();
+
     try {
-      // For local testing; adjust/remove master for cluster runs
-      SparkConf conf = new SparkConf()
-        .setAppName("QueueStream")
-        .setMaster("spark://localhost:7077")
-        .set("spark.driver.host", "localhost")
+      // The DStream-based queueStream is for testing and has limitations.
+      // A better approach in Structured Streaming is to use a robust source.
+      // We'll use the "rate" source to generate a continuous stream of numbers,
+      // which is a great way to test streaming logic.
+      // This creates a DataFrame with 'timestamp' and 'value' (Long) columns.
+      Dataset<Row> inputStream = spark.readStream()
+        .format("rate")
+        .option("rowsPerSecond", 10) // Adjust data rate as needed
+        .load();
 
-      // Avoid Java 17 module-access issues when running from main()/IDE
-        // by disabling process tree metrics. Alternatively, run with:
-        // --add-exports=java.base/jdk.internal.platform=ALL-UNNAMED
-        .set("spark.executor.processTreeMetrics.enabled", "false")
-        .set("spark.driver.processTreeMetrics.enabled", "false");
+      // Perform the same logic as before (i % 10) using DataFrame operations
+      Dataset<Row> processedStream = inputStream
+        .withColumn("key", functions.col("value").mod(10))
+        .groupBy("key")
+        .count();
 
-      // Create the context with a 1 second batch size
-      ssc = new JavaStreamingContext(conf, Durations.seconds(1));
+      // Start the query to print the running counts to the console
+      StreamingQuery query = processedStream.writeStream()
+        .outputMode("update") // Show only updated rows in the console
+        .format("console")
+        .option("truncate", "false") // Show full column content
+        .start();
 
-      // Create and push some RDDs into the queue
-      List<Integer> list = new ArrayList<>();
-      for (int i = 0; i < 1000; i++) {
-        list.add(i);
-      }
-
-      Queue<JavaRDD<Integer>> rddQueue = new LinkedList<>();
-      for (int i = 0; i < 30; i++) {
-        rddQueue.add(ssc.sparkContext().parallelize(list));
-      }
-
-      // Create the QueueInputDStream and use it to do some processing
-      JavaDStream<Integer> inputStream = ssc.queueStream(rddQueue);
-      JavaPairDStream<Integer, Integer> mappedStream = inputStream.mapToPair(i -> new Tuple2<>(i % 10, 1));
-      JavaPairDStream<Integer, Integer> reducedStream = mappedStream.reduceByKey(Integer::sum);
-
-      reducedStream.print();
-
-      ssc.start();
-      ssc.awaitTermination();
+      // Await termination to keep the application running
+      query.awaitTermination();
     } finally {
-      // Stop gracefully
-      if (ssc != null) {
-        ssc.stop(true, true);
-      }
+      // Stop the SparkSession gracefully
+      spark.stop();
     }
   }
 }
