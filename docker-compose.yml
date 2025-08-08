@@ -1,0 +1,21 @@
+services:
+  spark-master:
+    image: apache/spark:4.0.0-scala2.13-java21-python3-r-ubuntu
+    hostname: spark-master
+    environment:
+      - SPARK_MODE=master
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
+
+  spark-worker:
+    image: apache/spark:4.0.0-scala2.13-java21-python3-r-ubuntu
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+    ports:
+      - "8081:8081"
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"]
+    depends_on:
+      - spark-master
