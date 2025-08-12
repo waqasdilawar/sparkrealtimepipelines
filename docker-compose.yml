@@ -8,6 +8,8 @@ services:
       - "8080:8080"
       - "7077:7077"
     command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
+    volumes:
+      - ./artifacts:/artifacts
     networks:
       - shared-services-network
 
