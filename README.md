@@ -19,7 +19,24 @@ A comprehensive real-time data processing application built with Apache Spark St
 - **Docker & Docker Compose** (optional, for containerized setup)
 
 ## Project Structure
-realtimepipelines/ ├── src/ │ └── main/ │ └── java/ │ └── org/devgurupk/realtimepipelines/ │ └── kafka/ │ ├── KafkaStreamProcessor.java │ └── KafkaJsonStreamSchemaProcessor.java ├── artifacts/ │ └── realtimepipelines-1.0-SNAPSHOT.jar ├── docker-compose.yml ├── pom.xml └── README.md
+
+```
+realtimepipelines/
+├── src/
+│   └── main/
+│       └── java/
+│           └── org/devgurupk/realtimepipelines/
+│               ├── SimpleSpark.java
+│               ├── QueueProcessingApp.java
+│               └── kafka/
+│                   ├── KafkaStreamProcessor.java
+│                   └── KafkaJsonStreamSchemaProcessor.java
+├── artifacts/
+│   └── realtimepipelines-1.0-SNAPSHOT.jar
+├── docker-compose.yml
+├── pom.xml
+└── README.md
+```
 
 ## Getting Started
 
@@ -36,17 +53,57 @@ mvn package
 ```
 
 ### 2. Setup Infrastructure
+
 Start Kafka and Spark services using Docker Compose:
+
+```bash
 docker-compose up -d
+```
 
 This will start:
 - Apache Kafka broker
 - Apache Spark master and worker nodes
 
-### 3. Running the Stream Processors
-#### Basic Kafka Stream Processor
+### 3. Create Kafka Topic
+
+```bash
+# Create a test topic
+docker exec -it kafka kafka-topics --create --topic test --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+
+# Verify topic creation
+docker exec -it kafka kafka-topics --list --bootstrap-server localhost:9092
+```
+
+### 4. Running Applications
+
+#### Simple Spark Application
+Basic Spark connectivity test that creates a dataset and performs simple operations:
+
+```bash
+/opt/spark/bin/spark-submit \
+--class org.devgurupk.realtimepipelines.SimpleSpark \
+--master spark://localhost:7077 \
+--driver-memory 1g \
+--executor-memory 1g \
+/artifacts/realtimepipelines-1.0-SNAPSHOT.jar
+```
+
+#### Queue Processing Application
+Structured streaming application using rate source for continuous data processing:
+
+```bash
+/opt/spark/bin/spark-submit \
+--class org.devgurupk.realtimepipelines.QueueProcessingApp \
+--master spark://localhost:7077 \
+--driver-memory 2g \
+--executor-memory 2g \
+/artifacts/realtimepipelines-1.0-SNAPSHOT.jar
+```
+
+#### Kafka Stream Processor
 Processes messages from Kafka topics with basic JSON structure:
-```shell
+
+```bash
 /opt/spark/bin/spark-submit \
 --class org.devgurupk.realtimepipelines.kafka.KafkaStreamProcessor \
 --master spark://localhost:7077 \
@@ -64,7 +121,7 @@ Processes messages from Kafka topics with basic JSON structure:
 #### JSON Schema Stream Processor
 Advanced processor with schema validation and complex JSON handling:
 
-```shell
+```bash
 /opt/spark/bin/spark-submit \
 --class org.devgurupk.realtimepipelines.kafka.KafkaJsonStreamSchemaProcessor \
 --master spark://localhost:7077 \
@@ -79,7 +136,22 @@ Advanced processor with schema validation and complex JSON handling:
 /artifacts/realtimepipelines-1.0-SNAPSHOT.jar
 ```
 
+## Testing
+
+### Send Test Messages to Kafka
+
+```bash
+# Send JSON messages to Kafka
+docker exec -it kafka kafka-console-producer --topic test --bootstrap-server localhost:9092
+
+# Example messages to send:
+{"name": "John", "age": 30}
+{"name": "Jane", "age": 25}
+{"name": "Bob", "age": 35}
+```
+
 ## Configuration
+
 ### Spark Configuration Parameters
 
 | Parameter | Description | Default Value |
@@ -88,13 +160,28 @@ Advanced processor with schema validation and complex JSON handling:
 | `--executor-memory` | Memory allocation for Spark executors | 2g |
 | `--total-executor-cores` | Total CPU cores for executors | 4 |
 | `--master` | Spark cluster master URL | spark://localhost:7077 |
+
 ### Kafka Configuration
+
 The applications connect to Kafka using the following default settings:
 - **Bootstrap Servers**: `broker:29092`
 - **Topic**: `test`
 - **Consumer Group**: Auto-generated
 
-## Stream Processing Components
+## Application Components
+
+### SimpleSpark
+- Basic Spark application for connectivity testing
+- Creates a simple dataset of numbers (1-10)
+- Performs count operations and displays results
+- Useful for verifying Spark cluster connectivity
+
+### QueueProcessingApp
+- Structured streaming application using rate source
+- Generates continuous data streams at configurable rates
+- Performs modulo operations and grouping
+- Outputs running counts to console
+
 ### KafkaStreamProcessor
 - Basic stream processing from Kafka topics
 - JSON parsing with predefined schema (name: String, age: Integer)
@@ -107,21 +194,78 @@ The applications connect to Kafka using the following default settings:
 - Complex data transformations
 - Extensible for enterprise-grade applications
 
-## Monitoring and Debugging
+## Monitoring
+
 ### Spark Web UI
 Access the Spark Web UI at: `http://localhost:8080`
-### Application Logs
-Monitor application logs in real-time:
-# View Spark driver logs
 
+### Application Logs
+
+```bash
+# View Spark master logs
+docker logs spark-master
+
+# View Spark worker logs
+docker logs spark-worker
 
 # View application-specific logs
-```shell
-docker logs spark-master
 tail -f working.log
+
+# View Kafka logs
+docker logs kafka
 ```
 
+## Troubleshooting
+
+### Common Issues
+
+1. **Connection refused to Spark master**
+   - Ensure Docker containers are running: `docker-compose ps`
+   - Check Spark master is accessible: `curl http://localhost:8080`
+
+2. **Kafka topic not found**
+   - Create the topic first using the commands in Setup section
+   - Verify topic exists: `docker exec -it kafka kafka-topics --list --bootstrap-server localhost:9092`
+
+3. **Out of memory errors**
+   - Increase driver/executor memory in spark-submit commands
+   - Monitor resource usage in Spark Web UI
+
+## Development
+
+### Prerequisites for Development
+- IntelliJ IDEA or Eclipse IDE
+- Java 21 JDK
+- Maven 3.6+
+
+### Building from Source
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd realtimepipelines
+
+# Build the project
+mvn clean package
+
+# Run tests (if available)
+mvn test
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature-name`
+3. Make your changes and commit: `git commit -am 'Add feature'`
+4. Push to the branch: `git push origin feature-name`
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
 ## Technology Stack
+
 - **Apache Spark 4.0.0**: Distributed computing framework
 - **Apache Kafka**: Distributed streaming platform
 - **Java 21**: Programming language
