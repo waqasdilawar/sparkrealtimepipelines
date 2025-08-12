@@ -50,6 +50,8 @@ mvn clean compile
 mvn package
 
 # The JAR file will be created at: target/realtimepipelines-1.0-SNAPSHOT.jar
+
+cp realtimepipelines-1.0-SNAPSHOT.jar ../artifacts/
 ```
 
 ### 2. Setup Infrastructure
@@ -65,14 +67,8 @@ This will start:
 - Apache Spark master and worker nodes
 
 ### 3. Create Kafka Topic
-
-```bash
-# Create a test topic
-docker exec -it kafka kafka-topics --create --topic test --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
-
-# Verify topic creation
-docker exec -it kafka kafka-topics --list --bootstrap-server localhost:9092
-```
+* foo
+* foobar
 
 ### 4. Running Applications
 
