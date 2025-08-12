@@ -21,7 +21,7 @@ public class KafkaJsonStreamSchemaProcessor {
     public static void main(String[] args) throws StreamingQueryException, TimeoutException {
         SparkSession spark = SparkSession.builder()
           .appName("StructuredKafkaStream")
-          .master("spark://172.26.0.2:7077")
+          .master("spark://spark-master:7077")
           .getOrCreate();
         
         spark.sparkContext().setLogLevel("TRACE");
@@ -40,7 +40,7 @@ public class KafkaJsonStreamSchemaProcessor {
                 .readStream()
                 .format("kafka")
                 .option("kafka.bootstrap.servers", "broker:29092")
-                .option("subscribe", "test2")
+                .option("subscribe", "foo")
                 .option("startingOffsets", "latest")
                 .load();
         

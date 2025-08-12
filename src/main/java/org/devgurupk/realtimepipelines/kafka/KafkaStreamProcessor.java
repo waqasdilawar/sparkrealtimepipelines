@@ -14,15 +14,15 @@ import org.apache.spark.sql.types.StructType;
 public final class KafkaStreamProcessor {
   public static void main(String[] args) throws StreamingQueryException, TimeoutException {
     SparkSession spark = SparkSession.builder()
-      .appName("StructuredKafkaStream")
-      .master("spark://172.26.0.2:7077")
+      .appName("KafkaStreamProcessor")
+      .master("spark://spark-master:7077")
       .getOrCreate();
 
     try {
       Dataset<String> inputStream = spark.readStream()
         .format("kafka")
         .option("kafka.bootstrap.servers", "broker:29092")
-        .option("subscribe", "test")
+        .option("subscribe", "foobar")
         .load()
         .selectExpr("CAST(value AS STRING)")
         .as(Encoders.STRING());

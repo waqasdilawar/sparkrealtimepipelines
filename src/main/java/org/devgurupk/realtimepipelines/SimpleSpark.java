@@ -8,7 +8,7 @@ public class SimpleSpark {
   public static void main(String[] args) {
     SparkSession spark = SparkSession.builder()
       .appName("SimpleSparkApp")
-      .master("spark://localhost:7077")
+      .master("spark://spark-master:7077")
       .config("spark.executor.processTreeMetrics.enabled", "false")
       .config("spark.driver.processTreeMetrics.enabled", "false")
       .getOrCreate();

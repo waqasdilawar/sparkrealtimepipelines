@@ -12,8 +12,8 @@ public final class QueueProcessingApp {
   public static void main(String[] args) throws StreamingQueryException, TimeoutException {
     SparkSession spark = SparkSession.builder()
       .appName("StructuredQueueStream")
-      .master("spark://localhost:7077")
-      .config("spark.driver.host", "10.43.202.124")
+      .master("spark://spark-master:7077")
+      //.config("spark.driver.host", "10.43.202.124")
       // Your existing config to prevent Java 17 errors
       .config("spark.executor.processTreeMetrics.enabled", "false")
       .config("spark.driver.processTreeMetrics.enabled", "false")
