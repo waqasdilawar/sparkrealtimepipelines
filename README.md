@@ -138,8 +138,7 @@ Advanced processor with schema validation and complex JSON handling:
 
 ```bash
 # Send JSON messages to Kafka
-docker exec -it kafka kafka-console-producer --topic test --bootstrap-server localhost:9092
-
+# Produce to foobar
 # Example messages to send:
 {"name": "John", "age": 30}
 {"name": "Jane", "age": 25}
@@ -161,7 +160,7 @@ docker exec -it kafka kafka-console-producer --topic test --bootstrap-server loc
 
 The applications connect to Kafka using the following default settings:
 - **Bootstrap Servers**: `broker:29092`
-- **Topic**: `test`
+- **Topic**: `foobar`
 - **Consumer Group**: Auto-generated
 
 ## Application Components
@@ -208,7 +207,7 @@ docker logs spark-worker
 tail -f working.log
 
 # View Kafka logs
-docker logs kafka
+docker logs broker
 ```
 
 ## Troubleshooting
@@ -221,7 +220,7 @@ docker logs kafka
 
 2. **Kafka topic not found**
    - Create the topic first using the commands in Setup section
-   - Verify topic exists: `docker exec -it kafka kafka-topics --list --bootstrap-server localhost:9092`
+   - Verify topic exists: `foo` and `foobar`
 
 3. **Out of memory errors**
    - Increase driver/executor memory in spark-submit commands
@@ -233,32 +232,6 @@ docker logs kafka
 - IntelliJ IDEA or Eclipse IDE
 - Java 21 JDK
 - Maven 3.6+
-
-### Building from Source
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd realtimepipelines
-
-# Build the project
-mvn clean package
-
-# Run tests (if available)
-mvn test
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Make your changes and commit: `git commit -am 'Add feature'`
-4. Push to the branch: `git push origin feature-name`
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Technology Stack
 
